@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOI Agent — Family Office Intelligence</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #161920;
+    --border:    #252830;
+    --accent:    #4f7cff;
+    --accent2:   #7c4fff;
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --success:   #22c55e;
+    --warn:      #f59e0b;
+    --card-bg:   #1a1d26;
+    --tag-bg:    #1e2235;
+    --user-bg:   rgba(79,124,255,.15);
+    --agent-bg:  #1a1d26;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  /* ── layout ── */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ── header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: color .2s, border-color .2s;
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--accent); }
+  .back-btn svg { width: 14px; height: 14px; }
+
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #fff;
+  }
+  .logo-text { font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .logout-link {
+    font-size: 12px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px;
+    transition: color .2s, border-color .2s;
+  }
+  .logout-link:hover { color: var(--text); border-color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .agent-badge {
+    background: linear-gradient(135deg, rgba(79,124,255,.15), rgba(124,79,255,.15));
+    border: 1px solid rgba(79,124,255,.3);
+    color: var(--accent);
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── messages area ── */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 0;
+    scroll-behavior: smooth;
+  }
+  .messages-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── welcome state ── */
+  .welcome {
+    text-align: center;
+    padding: 48px 20px 24px;
+  }
+  .welcome-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, rgba(79,124,255,.2), rgba(124,79,255,.2));
+    border: 1px solid rgba(79,124,255,.3);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 24px;
+  }
+  .welcome h2 {
+    font-size: 22px; font-weight: 800;
+    letter-spacing: -0.4px; margin-bottom: 8px;
+  }
+  .welcome h2 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .welcome p { color: var(--muted); font-size: 14px; max-width: 480px; margin: 0 auto 28px; line-height: 1.6; }
+
+  .example-goals {
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 560px; margin: 0 auto;
+  }
+  .goal-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: left;
+    transition: all .2s;
+    line-height: 1.4;
+  }
+  .goal-chip:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--card-bg);
+  }
+  .goal-chip-label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--accent); margin-bottom: 4px;
+  }
+
+  /* ── message bubbles ── */
+  .msg { display: flex; flex-direction: column; gap: 6px; }
+
+  .msg-user {
+    align-self: flex-end;
+    max-width: 72%;
+  }
+  .msg-user .bubble {
+    background: var(--user-bg);
+    border: 1px solid rgba(79,124,255,.25);
+    border-radius: 14px 14px 4px 14px;
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .msg-user .msg-meta {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    padding-right: 4px;
+  }
+
+  .msg-agent { align-self: flex-start; max-width: 100%; width: 100%; }
+  .msg-agent .bubble {
+    background: var(--agent-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px 14px 14px 14px;
+    padding: 18px 20px;
+    line-height: 1.7;
+  }
+
+  /* ── thinking state ── */
+  .thinking-bubble {
+    background: var(--agent-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px 14px 14px 14px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    color: var(--muted); font-size: 13px;
+  }
+  .thinking-dots {
+    display: flex; gap: 4px;
+  }
+  .thinking-dots span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: dot-bounce .9s infinite ease-in-out;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: .15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: .30s; }
+  @keyframes dot-bounce {
+    0%, 80%, 100% { transform: scale(0.7); opacity: .4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+  .thinking-steps {
+    font-size: 12px; color: var(--muted);
+    margin-top: 8px; font-style: italic;
+  }
+
+  /* ── agent answer ── */
+  .answer-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+  }
+  .answer-label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .answer-label::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .answer-meta {
+    margin-left: auto;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .meta-chip {
+    font-size: 11px; color: var(--muted);
+    background: var(--tag-bg);
+    border-radius: 4px; padding: 2px 7px;
+  }
+
+  .answer-text {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .answer-text.markdown h1,.answer-text.markdown h2,.answer-text.markdown h3 { color: var(--accent); margin: 16px 0 6px; font-size: 14px; }
+  .answer-text.markdown p { margin-bottom: 10px; }
+  .answer-text.markdown ul,.answer-text.markdown ol { padding-left: 20px; margin-bottom: 10px; }
+  .answer-text.markdown li { margin-bottom: 4px; }
+  .answer-text.markdown strong { color: #fff; }
+  .answer-text.markdown code { background: #1e2235; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .answer-text.markdown hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  /* ── input area ── */
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .input-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px 10px 16px;
+    transition: border-color .2s;
+  }
+  .input-inner:focus-within { border-color: var(--accent); }
+  textarea {
+    flex: 1;
+    background: none; border: none; outline: none;
+    color: var(--text); font-size: 14px;
+    resize: none; line-height: 1.5;
+    min-height: 22px; max-height: 140px;
+    font-family: inherit;
+    overflow-y: auto;
+  }
+  textarea::placeholder { color: var(--muted); }
+  .send-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 8px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: opacity .2s;
+  }
+  .send-btn:hover { opacity: .85; }
+  .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .send-btn svg { width: 16px; height: 16px; }
+  .input-hint {
+    text-align: center;
+    font-size: 11px; color: var(--muted);
+    margin-top: 10px; max-width: 780px; margin-left: auto; margin-right: auto;
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- header -->
+  <header>
+    <div class="header-left">
+      <a href="/" class="back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Search
+      </a>
+      <div class="logo">
+        <div class="logo-mark">F</div>
+        <div>
+          <div class="logo-text">FOI</div>
+          <div class="logo-sub">Family Office Intelligence</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="agent-badge">Agent</div>
+      <a href="/logout" class="logout-link">Logout</a>
+    </div>
+  </header>
+
+  <!-- messages -->
+  <div class="messages" id="messages">
+    <div class="messages-inner" id="messagesInner">
+
+      <!-- welcome state -->
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🤖</div>
+        <h2>Family Office <span>Agent</span></h2>
+        <p>Ask a complex research goal. The agent reasons step by step, searches the dataset multiple times if needed, and composes a business-grade answer.</p>
+
+        <div class="example-goals">
+          <div class="goal-chip" onclick="setGoal(this)">
+            <div class="goal-chip-label">LP Sourcing</div>
+            Which family offices in the dataset are the best fit as limited partners for a diversified alternatives fund, and how confident are you in each recommendation?
+          </div>
+          <div class="goal-chip" onclick="setGoal(this)">
+            <div class="goal-chip-label">ESG / Impact</div>
+            Find family offices that prioritize ESG, sustainable investing, or impact strategies and tell me which ones have verified contact information available.
+          </div>
+          <div class="goal-chip" onclick="setGoal(this)">
+            <div class="goal-chip-label">SFO Intelligence</div>
+            Give me a breakdown of single-family offices in the dataset - who runs them, what they focus on, and which ones are worth reaching out to first.
+          </div>
+          <div class="goal-chip" onclick="setGoal(this)">
+            <div class="goal-chip-label">Comparison</div>
+            Compare the top multi-family offices in the dataset - which ones have the strongest investment thesis and the most complete data profile?
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- input -->
+  <div class="input-area">
+    <div class="input-inner">
+      <textarea
+        id="goalInput"
+        placeholder="Ask a research goal — e.g. find family offices for a healthcare LP raise..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendGoal()" title="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="input-hint">Enter to send &middot; Shift+Enter for new line &middot; Agent uses multi-step reasoning</div>
+  </div>
+
+</div>
+
+<script>
+const API = '';
+let isRunning = false;
+let thinkingEl = null;
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendGoal();
+  }
+}
+
+function setGoal(chip) {
+  const label = chip.querySelector('.goal-chip-label');
+  const text  = chip.innerText.replace(label ? label.innerText : '', '').trim();
+  const input = document.getElementById('goalInput');
+  input.value = text;
+  autoResize(input);
+  input.focus();
+}
+
+function scrollBottom() {
+  const m = document.getElementById('messages');
+  m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' });
+}
+
+function hideWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+}
+
+function appendUserMsg(text) {
+  hideWelcome();
+  const inner = document.getElementById('messagesInner');
+  const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const el = document.createElement('div');
+  el.className = 'msg msg-user';
+  el.innerHTML = `
+    <div class="bubble">${escHtml(text)}</div>
+    <div class="msg-meta">${ts}</div>
+  `;
+  inner.appendChild(el);
+  scrollBottom();
+}
+
+function appendThinking() {
+  const inner = document.getElementById('messagesInner');
+  const el = document.createElement('div');
+  el.className = 'msg msg-agent';
+  el.innerHTML = `
+    <div class="thinking-bubble">
+      <div class="thinking-dots"><span></span><span></span><span></span></div>
+      <div>
+        <div>Agent is reasoning...</div>
+        <div class="thinking-steps" id="thinkingStatus">Calling tools to gather evidence</div>
+      </div>
+    </div>
+  `;
+  inner.appendChild(el);
+  thinkingEl = el;
+  scrollBottom();
+  return el;
+}
+
+function removeThinking() {
+  if (thinkingEl) { thinkingEl.remove(); thinkingEl = null; }
+}
+
+function appendAgentMsg(result) {
+  const inner = document.getElementById('messagesInner');
+  const el = document.createElement('div');
+  el.className = 'msg msg-agent';
+
+  const steps    = result.steps || 0;
+  const tokens   = result.total_tokens || 0;
+  const duration = result.started_at && result.completed_at
+    ? Math.round((new Date(result.completed_at) - new Date(result.started_at)) / 1000)
+    : null;
+
+  el.innerHTML = `
+    <div class="bubble">
+      <div class="answer-header">
+        <div class="answer-label">Agent Answer</div>
+        <div class="answer-meta">
+          ${steps ? `<span class="meta-chip">${steps} steps</span>` : ''}
+          ${tokens ? `<span class="meta-chip">${tokens.toLocaleString()} tokens</span>` : ''}
+          ${duration !== null ? `<span class="meta-chip">${duration}s</span>` : ''}
+        </div>
+      </div>
+      <div class="answer-text markdown">${marked.parse(result.answer || 'No answer returned.')}</div>
+    </div>
+  `;
+  inner.appendChild(el);
+  scrollBottom();
+}
+
+function appendErrorMsg(msg) {
+  const inner = document.getElementById('messagesInner');
+  const el = document.createElement('div');
+  el.className = 'msg msg-agent';
+  el.innerHTML = `
+    <div class="bubble" style="border-color:rgba(239,68,68,.3)">
+      <div class="answer-label" style="color:#ef4444">Error</div>
+      <div class="answer-text" style="color:var(--muted); margin-top:8px">${escHtml(msg)}</div>
+    </div>
+  `;
+  inner.appendChild(el);
+  scrollBottom();
+}
+
+async function sendGoal() {
+  if (isRunning) return;
+  const input = document.getElementById('goalInput');
+  const goal  = input.value.trim();
+  if (!goal) return;
+
+  isRunning = true;
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendUserMsg(goal);
+  appendThinking();
+
+  // cycle the status hint while waiting
+  const hints = [
+    'Calling tools to gather evidence',
+    'Searching the dataset...',
+    'Cross-referencing signals...',
+    'Comparing candidate firms...',
+    'Composing answer...',
+  ];
+  let hintIdx = 0;
+  const hintTimer = setInterval(() => {
+    const el = document.getElementById('thinkingStatus');
+    if (el) { hintIdx = (hintIdx + 1) % hints.length; el.textContent = hints[hintIdx]; }
+  }, 2500);
+
+  try {
+    const res = await fetch(`${API}/agent/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal }),
+    });
+
+    clearInterval(hintTimer);
+    removeThinking();
+
+    if (res.status === 401) { window.location.href = '/login'; return; }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      appendErrorMsg(err.detail || 'Agent run failed.');
+    } else {
+      const data = await res.json();
+      appendAgentMsg(data);
+    }
+  } catch (e) {
+    clearInterval(hintTimer);
+    removeThinking();
+    appendErrorMsg('Network error: ' + e.message);
+  } finally {
+    isRunning = false;
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// focus on load
+document.getElementById('goalInput').focus();
+</script>
+</body>
+</html>

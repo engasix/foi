@@ -1,0 +1,49 @@
+- Starting with assignment-2 
+- I am not affraid of system design I am good here, I am affraid of data descovery and its sources.
+- https://www.openvc.app/investor-lists/family-offices [Found a source with 623 family office records]
+- Found that Google AI is performing better than Calude to find datasources
+- Office WiFi is running low today.
+- Pure Single-Family Offices (SFOs) are legally exempt from registering with the SEC under the Investment Advisers Act of 1940.
+- openvc.app is bot-protected unable to scrap data :(
+- Working on discovery agent with same sec-api.io API
+- Find something interesting: Item 5.D of Form ADV Part 1A explicitly asks the firm to break down its client base
+
+- So following is the complete protocl:
+  1 - Item 5.D of Form ADV Part 1A explicitly asks the firm to break down its client base.
+    - Target Field: Item 5.D.(1)(i) or Item 5.D.(2)(i)
+    - Metric: High-Net-Worth Individuals
+    - Logic: Look for firms where "High-Net-Worth Individuals" account for 80% to 100% of their total client count or regulatory assets under management (RAUM). Standard commercial RIAs service retail clients, while MFOs focus almost exclusively on ultra-high-net-worth (UHNW) individual brackets.
+  2 - Evaluate Client Density (Item 5.F)
+    - Family offices typically manage massive capital pooled across a very small number of families.
+    - Target Fields: Item 5.F.(2)(a) (Total Number of Accounts) divided by Item 5.F.(2)(c) (Total Regulatory Assets Under Management).
+    - Logic: Filter for a high AUM-to-Account ratio. If an entity manages $500 million across fewer than 10 or 20 total accounts, it is highly likely operating as a private multi-family office or a pseudo-SFO rather than a consumer wealth management firm.
+  3 - Scan for Private Fund Affiliations (Schedule D, Section 7.B)
+    - Family offices frequently set up private Special Purpose Vehicles (SPVs), limited partnerships, or private equity pools to deploy family capital into deals.
+    - Target Field: Schedule D, Section 7.B.(1) (Private Fund Reporting).
+    - Logic: Look for firms managing private funds where the "Type of Private Fund" is listed as a Venture Capital Fund, Private Equity Fund, or Hedge Fund, but the fund's investors are listed in Section 7.B.(1).A.14 as primarily "High-Net-Worth Individuals" or "Individuals." This indicates a private family vehicle investing in alternatives.
+  4 - Extract Owner and Executive Roles (Schedule A & B)
+    - Family offices are usually controlled directly by the family members or a single holding company.
+    - Target Field: Schedule A (Direct Owners and Executive Officers) and Schedule B (Indirect Owners).
+    - Logic: Write script strings to search the names listed in these schedules against public lists of ultra-wealthy families or corporate executives. Additionally, isolate entities where the top owners are listed as a "Trust" or a single "Holding Company" rather than an outside private equity sponsor or corporate parent.
+
+- All agents will use a single logger
+- All agents work in parallel mode
+- Staleness agent will start its work when records.run_cycle = 2, we will hit an api to update the value using GitHub Actions
+- All agents completed
+- Testing the entire pipeline
+- Agents are running in the production
+- Something strange happened - AWS EC2 t3.medium stoped responding - Investigetting the issue
+- Rebooting the server
+- Rebooting server didn't fixed the issue - as soon I reboot the server it freezes it self instantly
+- Setting up user data in instance setting to stop all services so I could access the server and manage the memory (which I think is the issue with our system)
+- Root cause: all 9 agents started simultaneously on boot causing a memory spike that froze the server - journal showed unclean shutdown, no OOM logs found
+- Fix: added 2GB swap file, disabled all agent services from auto-start, will now start agents manually with 10-15 second gaps between each
+- Testing again with staggered startup to confirm stability
+- Data ceiling hit: processed all 2853 records from the local JSON file, yielding 784 live-website candidates, 174 classified as family offices, 80 indexed
+- Root cause of data ceiling: sec-api.io free tier (100 requests) was exhausted during development. Attempted to upgrade payment method - card declined. Created a second account to resume - account was banned by sec-api.io. Fallback was the locally cached records.json (2853 records saved during development to preserve API credits), which has now been fully processed.
+- 500-record target was not reached due to this data source constraint - will be disclosed honestly in submission
+- Staleness agent removed 3 records from indexing, validatin guy is checking it again.
+- Self-review: internet search should be the primary enrichment source, not direct website scraping
+- Many family offices have minimal web presence by design - third-party sources know more about them than their own site
+- Most websites block headless scrapers - Cloudflare and similar firewalls reject automated requests
+- Non-headless Playwright on a local machine would bypass this but is not viable on a cloud server

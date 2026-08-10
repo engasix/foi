@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Downloads - FOI</title>
+  <style>
+    body { font-family: monospace; background: #0f1117; color: #e2e8f0; padding: 40px; }
+    h2 { color: #63b3ed; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: #718096; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #2d3748; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1a202c; }
+    td:last-child { color: #718096; width: 100px; text-align: right; }
+    a { color: #63b3ed; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h2>Downloads</h2>
+  <p style="margin-bottom:16px"><a href="/">&larr; Search</a> &middot; <a href="/logout">Logout</a></p>
+  <table>
+    <thead><tr><th>File</th><th style="text-align:right">Size</th></tr></thead>
+    <tbody>{{rows}}</tbody>
+  </table>
+</body>
+</html>

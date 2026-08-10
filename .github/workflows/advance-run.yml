@@ -1,0 +1,33 @@
+name: Advance Pipeline to Run 2
+
+on:
+  workflow_dispatch:
+  schedule:
+    # - cron: '0 0 */2 * *'
+
+jobs:
+  advance-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Run 2
+        run: |
+          echo "Triggering pipeline advance-run at $(date -u)"
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            https://polarityiq2.engasix.me/pipeline/advance-run \
+            -H "Content-Type: application/json")
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -1)
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "ERROR: advance-run failed with status $http_code"
+            exit 1
+          fi
+
+          records=$(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('records_advanced', 0))")
+          echo "Records advanced to Run 2: $records"

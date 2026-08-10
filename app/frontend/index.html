@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOI — Family Office Intelligence</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #161920;
+    --border:    #252830;
+    --accent:    #4f7cff;
+    --accent2:   #7c4fff;
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --success:   #22c55e;
+    --warn:      #f59e0b;
+    --card-bg:   #1a1d26;
+    --tag-bg:    #1e2235;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #fff;
+  }
+  .logo-text { font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .header-stats { display: flex; gap: 20px; align-items: center; }
+  .logout-link {
+    font-size: 12px; color: var(--muted); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px;
+    transition: color .2s, border-color .2s;
+  }
+  .logout-link:hover { color: var(--text); border-color: var(--accent); }
+  .stat { text-align: right; }
+  .stat-val { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── hero search ── */
+  .hero {
+    max-width: 780px;
+    margin: 48px auto 0;
+    padding: 0 20px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.5px; line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .hero h1 span {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .search-wrap {
+    display: flex; gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px 6px 6px 16px;
+    transition: border-color .2s;
+  }
+  .search-wrap:focus-within { border-color: var(--accent); }
+  .search-wrap input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-size: 15px;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: opacity .2s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── filters ── */
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 14px; justify-content: center;
+  }
+  .filter-item { display: flex; align-items: center; gap: 6px; }
+  .filter-item label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .filter-item select, .filter-item input {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 5px 8px;
+    font-size: 12px; outline: none;
+  }
+  .filter-item select:focus, .filter-item input:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  /* ── example queries ── */
+  .examples { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .example-chip {
+    background: var(--tag-bg); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px;
+    color: var(--muted); cursor: pointer; transition: all .2s;
+  }
+  .example-chip:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── main content ── */
+  main {
+    max-width: 1000px; margin: 40px auto 80px;
+    padding: 0 20px;
+  }
+
+  /* ── answer box ── */
+  .answer-box {
+    background: linear-gradient(135deg, rgba(79,124,255,.08), rgba(124,79,255,.08));
+    border: 1px solid rgba(79,124,255,.25);
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;
+  }
+  .answer-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent); font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .answer-label::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: .4; }
+  }
+  .answer-text { line-height: 1.7; color: var(--text); font-size: 14px; }
+  .answer-text.markdown h1,.answer-text.markdown h2,.answer-text.markdown h3 { color: var(--accent); margin: 14px 0 6px; font-size: 14px; }
+  .answer-text.markdown p { margin-bottom: 10px; }
+  .answer-text.markdown ul,.answer-text.markdown ol { padding-left: 20px; margin-bottom: 10px; }
+  .answer-text.markdown li { margin-bottom: 4px; }
+  .answer-text.markdown strong { color: #fff; }
+  .answer-text.markdown code { background: #1e2235; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .answer-text.markdown hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  /* ── results header ── */
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .results-count { font-size: 13px; color: var(--muted); }
+  .results-count span { color: var(--text); font-weight: 600; }
+
+  /* ── firm card ── */
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+    margin-bottom: 12px; transition: border-color .2s;
+  }
+  .card:hover { border-color: rgba(79,124,255,.4); }
+
+  .card-top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 12px; margin-bottom: 14px;
+  }
+  .firm-name { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .firm-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 3px 8px; border-radius: 4px;
+  }
+  .tag-sfo  { background: rgba(79,124,255,.15); color: var(--accent); }
+  .tag-mfo  { background: rgba(124,79,255,.15); color: var(--accent2); }
+  .tag-loc  { background: var(--tag-bg); color: var(--muted); }
+  .tag-aum  { background: rgba(34,197,94,.1); color: var(--success); }
+
+  .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .similarity { font-size: 11px; color: var(--muted); }
+  .similarity span { font-weight: 700; color: var(--text); }
+  .confidence-badge {
+    font-size: 11px; font-weight: 700;
+    padding: 3px 9px; border-radius: 20px;
+  }
+  .conf-high   { background: rgba(34,197,94,.12);  color: var(--success); }
+  .conf-medium { background: rgba(245,158,11,.12); color: var(--warn); }
+  .conf-low    { background: rgba(107,114,128,.12); color: var(--muted); }
+
+  /* ── grid ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .grid-section h4 {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted); margin-bottom: 8px; font-weight: 600;
+  }
+  .field { margin-bottom: 6px; }
+  .field-val { font-size: 13px; color: var(--text); }
+  .field-val a { color: var(--accent); text-decoration: none; }
+  .field-val a:hover { text-decoration: underline; }
+  .field-empty { color: var(--muted); font-style: italic; font-size: 12px; }
+
+  /* ── signals ── */
+  .signals { border-top: 1px solid var(--border); padding-top: 14px; }
+  .signals h4 {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--warn); margin-bottom: 8px; font-weight: 600;
+  }
+  .signal-item {
+    font-size: 12px; color: var(--muted); padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .signal-item:last-child { border-bottom: none; }
+  .signal-type {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 2px 6px; border-radius: 3px; margin-right: 6px;
+    background: rgba(245,158,11,.1); color: var(--warn);
+  }
+
+  /* ── empty / error ── */
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+
+  /* ── loading ── */
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading { text-align: center; padding: 60px; }
+
+  /* ── agent FAB ── */
+  .agent-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border-radius: 30px;
+    padding: 13px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(79,124,255,.45);
+    transition: transform .2s, box-shadow .2s;
+    z-index: 100;
+  }
+  .agent-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(79,124,255,.6);
+  }
+  .agent-fab svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ── upgrade modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    align-items: center; justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal-icon { font-size: 26px; margin-bottom: 10px; }
+  .modal-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .modal-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+  .modal-contact {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 18px;
+  }
+  .modal-contact span { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .modal-contact button {
+    background: var(--tag-bg); border: 1px solid var(--border); color: var(--text);
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 5px;
+    cursor: pointer; transition: border-color .2s;
+  }
+  .modal-contact button:hover { border-color: var(--accent); }
+  .modal-close {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 8px;
+    padding: 9px 24px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: opacity .2s;
+  }
+  .modal-close:hover { opacity: .85; }
+
+  /* ── responsive ── */
+  @media (max-width: 600px) {
+    .card-grid { grid-template-columns: 1fr; }
+    .header-stats { display: none; }
+    .agent-fab span { display: none; }
+    .agent-fab { padding: 14px; border-radius: 50%; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">F</div>
+    <div>
+      <div class="logo-text">FOI</div>
+      <div class="logo-sub">Family Office Intelligence</div>
+    </div>
+  </div>
+  <div class="header-stats" id="headerStats"></div>
+  <a href="/logout" class="logout-link">Logout</a>
+</header>
+
+<div class="hero">
+  <h1>Search <span>Family Office</span> Intelligence</h1>
+  <p>Semantic and structured search across 106 verified private family office records.</p>
+
+  <div class="search-wrap">
+    <input type="text" id="queryInput" placeholder="e.g. multi-family offices focused on wealth preservation and legacy..." />
+    <button class="btn" id="searchBtn" onclick="runQuery()">Search</button>
+  </div>
+
+  <div class="filters">
+    <div class="filter-item">
+      <label>Type</label>
+      <select id="filterType">
+        <option value="">Any</option>
+        <option value="SFO">SFO</option>
+        <option value="MFO">MFO</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>State</label>
+      <input type="text" id="filterState" placeholder="e.g. TX" maxlength="2" style="width:60px" />
+    </div>
+    <div class="filter-item">
+      <label>City</label>
+      <input type="text" id="filterCity" placeholder="e.g. Miami" style="width:100px" />
+    </div>
+    <div class="filter-item">
+      <label>Min Score</label>
+      <select id="filterConfidence">
+        <option value="">Any</option>
+        <option value="60">60%+</option>
+        <option value="75">75%+</option>
+        <option value="90">90%+</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>Signals</label>
+      <select id="filterSignals">
+        <option value="">Any</option>
+        <option value="true">Has signals</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <label>Results</label>
+      <select id="filterTopK">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="examples">
+    <div class="example-chip" onclick="setQuery('family offices focused on wealth preservation and legacy')">Wealth preservation</div>
+    <div class="example-chip" onclick="setQuery('multi-family offices with diversified investment mandates')">Diversified MFO</div>
+    <div class="example-chip" onclick="setQuery('family offices with ESG or sustainable investing focus')">ESG / Impact</div>
+    <div class="example-chip" onclick="setQuery('family office wealth management contact details')">Contact-rich SFOs</div>
+    <div class="example-chip" onclick="setQuery('family offices focused on long-term growth and tax efficiency')">Long-term growth</div>
+  </div>
+</div>
+
+<main id="mainContent"></main>
+
+<script>
+const API = '';
+
+async function loadStats() {
+  try {
+    const r = await fetch(`${API}/stats`);
+    if (r.status === 401) { window.location.href = '/login'; return; }
+    const d = await r.json();
+    document.getElementById('headerStats').innerHTML = `
+      <div class="stat"><div class="stat-val">${d.total_indexed}</div><div class="stat-lbl">Firms</div></div>
+      <div class="stat"><div class="stat-val">${d.with_email}</div><div class="stat-lbl">Emails</div></div>
+      <div class="stat"><div class="stat-val">${d.total_signals}</div><div class="stat-lbl">Signals</div></div>
+      <div class="stat"><div class="stat-val">${d.avg_confidence}%</div><div class="stat-lbl">Avg Score</div></div>
+    `;
+  } catch(e) {}
+}
+
+function setQuery(text) {
+  document.getElementById('queryInput').value = text;
+  runQuery();
+}
+
+document.getElementById('queryInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runQuery();
+});
+
+async function runQuery() {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Searching...';
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="loading"><div class="spinner"></div></div>`;
+
+  const body = {
+    q,
+    top_k: parseInt(document.getElementById('filterTopK').value) || 10,
+  };
+  const type  = document.getElementById('filterType').value;
+  const state = document.getElementById('filterState').value.trim().toUpperCase();
+  const city  = document.getElementById('filterCity').value.trim();
+  const conf  = document.getElementById('filterConfidence').value;
+  const sigs  = document.getElementById('filterSignals').value;
+
+  if (type)  body.fo_type        = type;
+  if (state) body.fo_state       = state;
+  if (city)  body.fo_city        = city;
+  if (conf)  body.min_confidence = parseInt(conf);
+  if (sigs)  body.has_signals    = true;
+
+  try {
+    const res  = await fetch(`${API}/query`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+
+    if (res.status === 401) { window.location.href = '/login'; return; }
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Query failed');
+    }
+
+    const data = await res.json();
+    renderResults(data);
+  } catch(e) {
+    document.getElementById('mainContent').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <h3>Error</h3>
+        <p>${e.message}</p>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Search';
+  }
+}
+
+function isMasked(value) {
+  if (!value) return false;
+  return value.startsWith('****@') || value.includes('/****');
+}
+
+const UPGRADE_CONTACT_EMAIL = 'asif@engasix.me';
+
+function showUpgradeModal(e) {
+  if (e) e.preventDefault();
+  document.getElementById('upgradeModal').classList.add('visible');
+}
+
+function closeUpgradeModal() {
+  document.getElementById('upgradeModal').classList.remove('visible');
+}
+
+function copyContactEmail() {
+  navigator.clipboard.writeText(UPGRADE_CONTACT_EMAIL).then(() => {
+    const btn = document.getElementById('copyContactBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+}
+
+function confidenceClass(score) {
+  if (score >= 75) return 'conf-high';
+  if (score >= 50) return 'conf-medium';
+  return 'conf-low';
+}
+
+function renderResults(data) {
+  const main = document.getElementById('mainContent');
+
+  if (data.count === 0) {
+    main.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <h3>No results found</h3>
+        <p>Try broadening your query or removing filters.</p>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Answer box
+  if (data.answer) {
+    html += `
+      <div class="answer-box">
+        <div class="answer-label">AI Answer</div>
+        <div class="answer-text markdown">${marked.parse(data.answer)}</div>
+      </div>`;
+  }
+
+  // Results header
+  const filterDesc = Object.entries(data.filters)
+    .filter(([,v]) => v !== null && v !== undefined)
+    .map(([k,v]) => `${k}: ${v}`)
+    .join(' · ');
+
+  html += `
+    <div class="results-header">
+      <div class="results-count"><span>${data.count}</span> firms matched${filterDesc ? ' · ' + filterDesc : ''}</div>
+    </div>`;
+
+  // Cards
+  for (const r of data.results) {
+    const loc = [r.fo_city, r.fo_state, r.fo_country].filter(Boolean).join(', ');
+    const typeTag = r.fo_type === 'SFO'
+      ? '<span class="tag tag-sfo">SFO</span>'
+      : r.fo_type === 'MFO'
+      ? '<span class="tag tag-mfo">MFO</span>'
+      : '';
+
+    html += `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="firm-name">${escHtml(r.fo_name)}</div>
+          <div class="firm-meta">
+            ${typeTag}
+            ${loc ? `<span class="tag tag-loc">📍 ${escHtml(loc)}</span>` : ''}
+            ${r.fo_aum ? `<span class="tag tag-aum">💰 ${escHtml(r.fo_aum)}</span>` : ''}
+          </div>
+        </div>
+        <div class="card-right">
+          <div class="similarity">Match <span>${r.similarity}%</span></div>
+          <div class="confidence-badge ${confidenceClass(r.confidence_score)}">
+            ✓ ${r.confidence_score}% confidence
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="grid-section">
+          <h4>Contact</h4>
+          ${r.fo_website ? `<div class="field"><div class="field-val"><a href="${escHtml(r.fo_website)}" target="_blank">🌐 Website</a></div></div>` : ''}
+          ${r.fo_corporate_linkedin ? `<div class="field"><div class="field-val">${
+            isMasked(r.fo_corporate_linkedin)
+              ? `<a href="#" onclick="showUpgradeModal(event)">🔗 ${escHtml(r.fo_corporate_linkedin)}</a>`
+              : `<a href="${escHtml(r.fo_corporate_linkedin)}" target="_blank">🔗 Company LinkedIn</a>`
+          }</div></div>` : ''}
+          ${r.fo_phone ? `<div class="field"><div class="field-val">📞 ${escHtml(r.fo_phone)}</div></div>` : ''}
+          ${!r.fo_website && !r.fo_corporate_linkedin && !r.fo_phone ? '<div class="field-empty">No contact info</div>' : ''}
+        </div>
+        <div class="grid-section">
+          <h4>Principal</h4>
+          ${r.principal_name ? `<div class="field"><div class="field-val">👤 ${escHtml(r.principal_name)}</div></div>` : ''}
+          ${r.principal_title ? `<div class="field"><div class="field-val" style="color:var(--muted)">${escHtml(r.principal_title)}</div></div>` : ''}
+          ${r.principal_email ? `<div class="field"><div class="field-val">${
+            isMasked(r.principal_email)
+              ? `<a href="#" onclick="showUpgradeModal(event)">✉️ ${escHtml(r.principal_email)}</a>`
+              : `<a href="mailto:${escHtml(r.principal_email)}">✉️ ${escHtml(r.principal_email)}</a>`
+          }</div></div>` : ''}
+          ${r.principal_linkedin ? `<div class="field"><div class="field-val">${
+            isMasked(r.principal_linkedin)
+              ? `<a href="#" onclick="showUpgradeModal(event)">🔗 ${escHtml(r.principal_linkedin)}</a>`
+              : `<a href="${escHtml(r.principal_linkedin)}" target="_blank">🔗 LinkedIn</a>`
+          }</div></div>` : ''}
+          ${!r.principal_name && !r.principal_email ? '<div class="field-empty">No principal info</div>' : ''}
+        </div>
+      </div>
+
+      ${r.has_signals ? `
+      <div class="signals">
+        <h4>⚡ Recent Signals</h4>
+        <div class="signal-item"><span class="signal-type">signal</span>Recent activity detected — view full record for details.</div>
+      </div>` : ''}
+    </div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// Init
+loadStats();
+</script>
+
+<a href="/agent" class="agent-fab">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+  <span>Ask the Agent</span>
+</a>
+
+<div class="modal-overlay" id="upgradeModal" onclick="if(event.target===this) closeUpgradeModal()">
+  <div class="modal-card">
+    <div class="modal-icon">🔒</div>
+    <h3>Full Contact Access Restricted</h3>
+    <p>Verified contact details for every family office in the dataset are available with an upgraded account. To request full access, get in touch below.</p>
+    <div class="modal-contact">
+      <span>asif@engasix.me</span>
+      <button id="copyContactBtn" onclick="copyContactEmail()">Copy</button>
+    </div>
+    <button class="modal-close" onclick="closeUpgradeModal()">Close</button>
+  </div>
+</div>
+</body>
+</html>

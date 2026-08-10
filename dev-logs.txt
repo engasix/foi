@@ -1,0 +1,137 @@
+- For the discovery agent I've decided to use sec-api.io which is based on SEC EDGAR data
+- Removed Serper.dev from dsicovery agent.
+- Total 175 records found from sec-api.io, 133 have valid website address.
+- Wrote scraper agent to scrap website content for available websites.
+- Enrichment from web content
+⏺ Here's summary after web-enrichment:
+  - 87 records - web enrichment found something
+  - 19 records - web ran but found nothing (thin/blocked sites)
+  - 96 records - still missing AUM (website rarely publishes this)
+  - 73 records - still missing principal name
+  - 48 records - still missing investing thesis
+
+- Enruchment from sec-api.io
+⏺ Here's summary after sec-enrichment:
+
+  ┌──────────────────┬────────────┬───────────┬─────────────────────────┐
+  │      Field       │ Before SEC │ After SEC │       Improvement       │
+  ├──────────────────┼────────────┼───────────┼─────────────────────────┤
+  │ fo_aum           │ 96 NULL    │ 22 NULL   │ 74 records filled       │
+  ├──────────────────┼────────────┼───────────┼─────────────────────────┤
+  │ fo_type          │ 20 NULL    │ 19 NULL   │ 1 filled                │
+  ├──────────────────┼────────────┼───────────┼─────────────────────────┤
+  │ fo_city          │ 12 NULL    │ 12 NULL   │ 0 (already filled)      │
+  ├──────────────────┼────────────┼───────────┼─────────────────────────┤
+  │ principal_name   │ 73 NULL    │ 73 NULL   │ 0 (SEC doesn't have it) │
+  ├──────────────────┼────────────┼───────────┼─────────────────────────┤
+  │ investing_thesis │ 48 NULL    │ 48 NULL   │ 0 (SEC doesn't have it) │
+  └──────────────────┴────────────┴───────────┴─────────────────────────┘
+
+- Search enrichment using serper.dev
+⏺ Wooohooo All 106 records are now enriched. Here's the before vs after:
+  ┌───────────────────────┬─────────┬─────────┬──────────────────┐
+  │         Field         │ Before  │  After  │ Filled by Search │
+  ├───────────────────────┼─────────┼─────────┼──────────────────┤
+  │ principal_name        │ 73 NULL │ 8 NULL  │ +65 records      │
+  ├───────────────────────┼─────────┼─────────┼──────────────────┤
+  │ principal_title       │ 71 NULL │ 10 NULL │ +61 records      │
+  ├───────────────────────┼─────────┼─────────┼──────────────────┤
+  │ fo_investing_thesis   │ 45 NULL │ 27 NULL │ +18 records      │
+  ├───────────────────────┼─────────┼─────────┼──────────────────┤
+  │ fo_investing_mandates │ 67 NULL │ 63 NULL │ +4 records       │
+  ├───────────────────────┼─────────┼─────────┼──────────────────┤
+  │ fo_type               │ 21 NULL │ 3 NULL  │ +18 records      │
+  └───────────────────────┴─────────┴─────────┴──────────────────┘
+
+- 10 hours passed since I started, and now data looks in some shape
+- Office linkedin link finding agent "linkedin_company_agent.py"
+- Principal linkedin link finding agent "linkedin_principal_agent.py"
+- Principal email discovery using Hunter.io (I have limited credits)
+
+  Pipeline: 106 fully enriched records out of 175 total
+  (69 skipped - no website to scrape)
+
+  Enrichment Coverage
+
+  ┌────────────────────┬───────────┬─────┐
+  │       Field        │   Count   │  %  │
+  ├────────────────────┼───────────┼─────┤
+  │ fo_type (SFO/MFO)  │ 103 / 106 │ 97% │
+  ├────────────────────┼───────────┼─────┤
+  │ fo_aum             │ 84 / 106  │ 79% │
+  ├────────────────────┼───────────┼─────┤
+  │ fo_city            │ 95 / 106  │ 90% │
+  ├────────────────────┼───────────┼─────┤
+  │ fo_background      │ 85 / 106  │ 80% │
+  ├────────────────────┼───────────┼─────┤
+  │ investing_thesis   │ 79 / 106  │ 75% │
+  ├────────────────────┼───────────┼─────┤
+  │ investing_mandates │ 43 / 106  │ 41% │
+  ├────────────────────┼───────────┼─────┤
+  │ principal_name     │ 98 / 106  │ 92% │
+  ├────────────────────┼───────────┼─────┤
+  │ principal_title    │ 96 / 106  │ 91% │
+  └────────────────────┴───────────┴─────┘
+
+  Contact & LinkedIn
+
+  ┌─────────────────────────┬───────┐
+  │                         │ Count │
+  ├─────────────────────────┼───────┤
+  │ Company LinkedIn URLs   │ 27    │
+  ├─────────────────────────┼───────┤
+  │ Principal LinkedIn URLs │ 16    │
+  ├─────────────────────────┼───────┤
+  │ Principal emails found  │ 49    │
+  ├─────────────────────────┼───────┤
+  │ - Verified valid        │ 37    │
+  ├─────────────────────────┼───────┤
+  │ - Accept all            │ 10    │
+  ├─────────────────────────┼───────┤
+  │ - Unknown               │ 2     │
+  └─────────────────────────┴───────┘
+
+- Signals agent added
+- Data export script added
+- Validation agent added
+  What the validation agent does in sequence per record:
+
+  1. Website liveness - HTTP GET fo_website → is the firm still active?
+  2. IAPD cross-check - hit api.adviserinfo.sec.gov/search/firm/{CRD} → compare name, city,
+  state → flag mismatches, correct where IAPD is authoritative (like Parkside's city)
+  3. Content spot-check - scan scrape_cache content for principal_name → confirms LLM
+  didn't hallucinate it
+  4. Calculate confidence score - based on field completeness + validation results
+  5. Write validation chain - one row per record in validation_chain table
+  6. Advance status - enriched → validated
+
+Confidence score calculation:
+  Base score: field completeness (max 40)
+
+  ┌───────────────────────────────────────────────────────────────────┬─────────────┐
+  │                           Field present                           │   Points    │
+  ├───────────────────────────────────────────────────────────────────┼─────────────┤
+  │ fo_name, fo_type, fo_city, fo_state                               │ 5 each = 20 │
+  ├───────────────────────────────────────────────────────────────────┼─────────────┤
+  │ fo_aum, fo_background, fo_investing_thesis, fo_investing_mandates │ 5 each = 20 │
+  └───────────────────────────────────────────────────────────────────┴─────────────┘
+
+  Validation score: independent verification (max 60)
+
+  ┌─────────────────────────────────────────┬────────┐
+  │                  Check                  │ Points │
+  ├─────────────────────────────────────────┼────────┤
+  │ Website live (HTTP 200)                 │ +15    │
+  ├─────────────────────────────────────────┼────────┤
+  │ IAPD name matches exactly               │ +15    │
+  ├─────────────────────────────────────────┼────────┤
+  │ IAPD city/state matches                 │ +10    │
+  ├─────────────────────────────────────────┼────────┤
+  │ Principal name found in scraped content │ +10    │
+  ├─────────────────────────────────────────┼────────┤
+  │ Principal LinkedIn verified             │ +5     │
+  ├─────────────────────────────────────────┼────────┤
+  │ Corporate LinkedIn verified             │ +5     │
+  └─────────────────────────────────────────┴────────┘
+
+- Starting with RAG 

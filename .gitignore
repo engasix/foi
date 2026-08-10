@@ -1,0 +1,15 @@
+.env
+.venv
+.csv
+.xlx
+.xlxs
+*pycache*
+backups/
+exports/
+Temp/
+CLAUDE.md
+old_agents/
+downloads/
+chroma_db/
+logs/
+phpMyAdmin.md
